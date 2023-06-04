@@ -13,5 +13,5 @@ func Reverse(s string) string {
 }
 
 func main() {
-	fmt.Printf(Reverse("Hello, OTUS!"))
+	fmt.Println(Reverse("Hello, OTUS!"))
 }
