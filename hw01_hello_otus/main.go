@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-
-	"github.com/golang/example"
 )
 
 func Reverse(s string) string {
@@ -16,5 +14,4 @@ func Reverse(s string) string {
 
 func main() {
 	fmt.Printf(Reverse("Hello, OTUS!"))
-	fmt.Printf(stringutil.Reverse("Hello, OTUS!"))
 }
