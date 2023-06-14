@@ -8,38 +8,38 @@ import (
 
 var ErrInvalidString = errors.New("invalid string")
 
-func Unpack(s string) (string, error) {
+func Unpack(s string) (string, error) { //nolint:gocognit)
 	var b str.Builder
 	var pr string
+	var isDigit bool
 	for _, v := range s {
 		iv, err := strconv.Atoi(string(v))
-		// fmt.Printf("pr: %q ... v: %q\n", pr, v)
+		isDigit = err == nil
 		switch {
-		case pr == "" && err == nil:
+		case pr == "" && isDigit:
 			return "", ErrInvalidString
-		case pr == "" && err != nil:
+		case pr == "" && !isDigit:
 			pr = string(v)
 		case pr == "\\" && string(v) == "\\":
 			pr = "\\\\"
-		case pr == "\\" && err == nil:
+		case pr == "\\" && isDigit:
 			pr = string(v)
-		case pr == "\\" && err != nil:
+		case pr == "\\" && !isDigit:
 			return "", ErrInvalidString
-		case pr == "\\\\" && err == nil:
+		case pr == "\\\\" && isDigit:
 			b.WriteString(str.Repeat("\\", iv))
 			pr = ""
-		case pr == "\\\\" && err != nil:
+		case pr == "\\\\" && !isDigit:
 			b.WriteString(str.Repeat("\\", 1))
 			pr = string(v)
-		case pr != "" && err == nil:
+		case pr != "" && isDigit:
 			b.WriteString(str.Repeat(pr, iv))
 			pr = ""
-		case pr != "" && err != nil:
+		case pr != "" && !isDigit:
 			b.WriteString(str.Repeat(pr, 1))
 			pr = string(v)
 		}
 	}
-
 	switch {
 	case pr == "\\\\":
 		b.WriteString(str.Repeat("\\", 1))
