@@ -8,7 +8,7 @@ import (
 
 var ErrInvalidString = errors.New("invalid string")
 
-func Unpack(s string) (string, error) { //nolint:gocognit
+func Unpack(s string) (string, error) {
 	var b str.Builder
 	var pr string
 	var isDigit bool
