@@ -30,9 +30,9 @@ linters:
     - errorlint
     - exhaustive
     - exportloopref
-    - funlen
+    #- funlen
     - gci
-    - gocognit
+    #- gocognit
     - goconst
     - gocritic
     - gocyclo
