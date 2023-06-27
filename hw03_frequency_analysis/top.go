@@ -6,9 +6,11 @@ import (
 	"strings"
 )
 
-var reDashLeft = regexp.MustCompile(`- `)
-var reDashRight = regexp.MustCompile(` -`)
-var reSpace = regexp.MustCompile(`[ \n\t,.:;"]+`)
+var (
+	reDashLeft  = regexp.MustCompile(`- `)
+	reDashRight = regexp.MustCompile(` -`)
+	reSpace     = regexp.MustCompile(`[ \n\t,.:;"]+`)
+)
 
 type words struct {
 	word  string
@@ -25,7 +27,7 @@ func Top10(s string) []string {
 	for _, v := range s3 {
 		m[strings.ToLower(v)]++
 	}
-	var sStruct []words
+	sStruct := make([]words, 0, len(m))
 
 	for w, cnt := range m {
 		sStruct = append(sStruct, words{w, cnt})
@@ -34,20 +36,18 @@ func Top10(s string) []string {
 	sort.Slice(sStruct, func(i, j int) bool {
 		if sStruct[i].count == sStruct[j].count {
 			return sStruct[i].word < sStruct[j].word
-		} else {
-			return sStruct[i].count > sStruct[j].count
 		}
+		return sStruct[i].count > sStruct[j].count
 	})
 
-	var result []string
-	for _, wrd := range sStruct {
-		result = append(result, wrd.word)
+	result := make([]string, len(sStruct))
+	for i, wrd := range sStruct {
+		result[i] = wrd.word
 	}
 	l := len(result)
 
 	if l > 9 {
 		return result[:10]
-	} else {
-		return result[:0]
 	}
+	return result[:0]
 }
