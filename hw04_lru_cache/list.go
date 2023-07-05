@@ -12,14 +12,14 @@ type List interface {
 
 type ListItem struct {
 	Value interface{}
-	Key interface{}
+	Key   interface{}
 	Next  *ListItem
 	Prev  *ListItem
 }
 
 type list struct {
-	first *ListItem
-	last *ListItem
+	first  *ListItem
+	last   *ListItem
 	length int
 }
 
@@ -49,7 +49,7 @@ func (l *list) PushFront(v, key interface{}) *ListItem {
 	return ret
 }
 
-func (l *list) PushBack (v, key interface{}) *ListItem {
+func (l *list) PushBack(v, key interface{}) *ListItem {
 	ret := &ListItem{v, key, nil, nil}
 	if l.last == nil {
 		l.last = ret
@@ -63,8 +63,8 @@ func (l *list) PushBack (v, key interface{}) *ListItem {
 	return ret
 }
 
-func (l *list) Remove (i *ListItem) {
-	if i.Prev == nil  {
+func (l *list) Remove(i *ListItem) {
+	if i.Prev == nil {
 		l.first = i.Next
 	} else {
 		i.Prev.Next = i.Next
@@ -77,7 +77,7 @@ func (l *list) Remove (i *ListItem) {
 	l.length--
 }
 
-func (l *list) MoveToFront (i *ListItem) {
+func (l *list) MoveToFront(i *ListItem) {
 	v, key := i.Value, i.Key
 	l.Remove(i)
 	l.PushFront(v, key)

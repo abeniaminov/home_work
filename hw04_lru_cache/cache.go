@@ -4,7 +4,7 @@ import (
 	"sync"
 )
 
-type Key string
+type Key interface{}
 
 type Cache interface {
 	Set(key Key, value interface{}) bool
@@ -23,21 +23,24 @@ func (lru *lruCache) Set(key Key, value interface{}) bool {
 	lru.Lock()
 	defer lru.Unlock()
 	if len(lru.items) == lru.capacity && lru.capacity > 0 {
+		keyBack := lru.queue.Back().Key
 		lru.queue.Remove(lru.queue.Back())
+		delete(lru.items, keyBack)
 	}
-	if listItem, ok := lru.items[key]; ok {
+	listItem, ok := lru.items[key]
+	if ok {
 		listItem.Value = value
 		lru.queue.MoveToFront(listItem)
 		return true
-	} else {
-		listItem = &ListItem{value, key, nil, nil}
-		lru.queue.PushFront(listItem, key)
-		lru.items[key] = listItem
 	}
-    return false
+	listItem = &ListItem{value, key, nil, nil}
+	lru.queue.PushFront(listItem, key)
+	lru.items[key] = listItem
+
+	return false
 }
 
-func (lru *lruCache) Get(key Key) (interface{},  bool) {
+func (lru *lruCache) Get(key Key) (interface{}, bool) {
 	lru.Lock()
 	defer lru.Unlock()
 	if listItem, ok := lru.items[key]; ok {
@@ -47,7 +50,7 @@ func (lru *lruCache) Get(key Key) (interface{},  bool) {
 	return nil, false
 }
 
-func (lru *lruCache) Clear()  {
+func (lru *lruCache) Clear() {
 	lru.Lock()
 	defer lru.Unlock()
 	lru.queue = NewList()
