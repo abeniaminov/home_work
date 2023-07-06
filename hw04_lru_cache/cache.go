@@ -35,9 +35,9 @@ func (lru *lruCache) Set(key Key, value interface{}) bool {
 		return true
 	}
 
-	if len(lru.items) == lru.capacity && lru.capacity > 0 {
-		back := lru.queue.Back().Value
-		if s, isKeyValue := back.(keyValue); isKeyValue {
+	if lru.queue.Len() == lru.capacity && lru.capacity > 0 {
+		backValue := lru.queue.Back().Value
+		if s, isType := backValue.(keyValue); isType {
 			keyBack := s.key
 			lru.queue.Remove(lru.queue.Back())
 			delete(lru.items, keyBack)
