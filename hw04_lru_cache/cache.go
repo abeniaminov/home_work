@@ -58,6 +58,7 @@ func (lru *lruCache) Clear() {
 	lru.queue = NewList()
 	lru.items = make(map[Key]*ListItem, lru.capacity)
 }
+
 func NewCache(capacity int) Cache {
 	return &lruCache{
 		capacity: capacity,

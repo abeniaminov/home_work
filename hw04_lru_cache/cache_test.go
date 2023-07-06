@@ -59,7 +59,7 @@ func TestCache(t *testing.T) {
 		c.Set("aaa", 100)
 		c.Set("bbb", 200)
 		c.Set("ccc", 300)
-		c.Set("ddd", 400) //ddd
+		c.Set("ddd", 400) // ddd
 
 		val, ok := c.Get("aaa")
 		require.False(t, ok)
@@ -76,7 +76,7 @@ func TestCache(t *testing.T) {
 		c.Set("aaa", 100) // aaa
 		c.Set("bbb", 200) // bbb aaa
 		c.Set("ccc", 300) // ccc bbb aaa
-		c.Set("ddd", 400) //ddd ccc bbb
+		c.Set("ddd", 400) // ddd ccc bbb
 
 		val, ok := c.Get("aaa")
 		require.False(t, ok)
