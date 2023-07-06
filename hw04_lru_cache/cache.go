@@ -4,12 +4,17 @@ import (
 	"sync"
 )
 
-type Key interface{}
+type Key string
 
 type Cache interface {
 	Set(key Key, value interface{}) bool
 	Get(key Key) (interface{}, bool)
 	Clear()
+}
+
+type keyValue struct {
+	key Key
+	val interface{}
 }
 
 type lruCache struct {
@@ -25,18 +30,21 @@ func (lru *lruCache) Set(key Key, value interface{}) bool {
 
 	listItem, ok := lru.items[key]
 	if ok {
-		listItem.Value = value
+		listItem.Value = keyValue{key: key, val: value}
 		lru.queue.MoveToFront(listItem)
 		return true
 	}
 
 	if len(lru.items) == lru.capacity && lru.capacity > 0 {
-		keyBack := lru.queue.Back().Key
-		lru.queue.Remove(lru.queue.Back())
-		delete(lru.items, keyBack)
+		back := lru.queue.Back().Value
+		if s, isKeyValue := back.(keyValue); isKeyValue {
+			keyBack := s.key
+			lru.queue.Remove(lru.queue.Back())
+			delete(lru.items, keyBack)
+		}
 	}
 
-	listItem = lru.queue.PushFront(value, key)
+	listItem = lru.queue.PushFront(keyValue{key: key, val: value})
 	lru.items[key] = listItem
 
 	return false
@@ -47,7 +55,9 @@ func (lru *lruCache) Get(key Key) (interface{}, bool) {
 	defer lru.Unlock()
 	if listItem, ok := lru.items[key]; ok {
 		lru.queue.MoveToFront(listItem)
-		return listItem.Value, true
+		if s, isType := listItem.Value.(keyValue); isType {
+			return s.val, true
+		}
 	}
 	return nil, false
 }
