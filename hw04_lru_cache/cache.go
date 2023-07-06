@@ -22,19 +22,21 @@ type lruCache struct {
 func (lru *lruCache) Set(key Key, value interface{}) bool {
 	lru.Lock()
 	defer lru.Unlock()
-	if len(lru.items) == lru.capacity && lru.capacity > 0 {
-		keyBack := lru.queue.Back().Key
-		lru.queue.Remove(lru.queue.Back())
-		delete(lru.items, keyBack)
-	}
+
 	listItem, ok := lru.items[key]
 	if ok {
 		listItem.Value = value
 		lru.queue.MoveToFront(listItem)
 		return true
 	}
-	listItem = &ListItem{value, key, nil, nil}
-	lru.queue.PushFront(listItem, key)
+
+	if len(lru.items) == lru.capacity && lru.capacity > 0 {
+		keyBack := lru.queue.Back().Key
+		lru.queue.Remove(lru.queue.Back())
+		delete(lru.items, keyBack)
+	}
+
+	listItem = lru.queue.PushFront(value, key)
 	lru.items[key] = listItem
 
 	return false
@@ -56,7 +58,6 @@ func (lru *lruCache) Clear() {
 	lru.queue = NewList()
 	lru.items = make(map[Key]*ListItem, lru.capacity)
 }
-
 func NewCache(capacity int) Cache {
 	return &lruCache{
 		capacity: capacity,
