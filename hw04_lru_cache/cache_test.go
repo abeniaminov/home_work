@@ -122,26 +122,24 @@ func TestCache(t *testing.T) {
 	})
 }
 
-func TestCacheMultithreading(t *testing.T) {
-	t.Run("multithreading logic", func(t *testing.T) {
-		c := NewCache(10)
-		wg := &sync.WaitGroup{}
-		wg.Add(2)
+func TestCacheMultithreading(_ *testing.T) {
+	c := NewCache(10)
+	wg := &sync.WaitGroup{}
+	wg.Add(2)
 
-		go func() {
-			defer wg.Done()
-			for i := 0; i < 1_000_000; i++ {
-				c.Set(Key(strconv.Itoa(i)), i)
-			}
-		}()
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 1_000_000; i++ {
+			c.Set(Key(strconv.Itoa(i)), i)
+		}
+	}()
 
-		go func() {
-			defer wg.Done()
-			for i := 0; i < 1_000_000; i++ {
-				c.Get(Key(strconv.Itoa(rand.Intn(1_000_000))))
-			}
-		}()
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 1_000_000; i++ {
+			c.Get(Key(strconv.Itoa(rand.Intn(1_000_000))))
+		}
+	}()
 
-		wg.Wait()
-	})
+	wg.Wait()
 }
