@@ -27,7 +27,7 @@ func Run(tasks []Task, n, m int) error {
 		go func() {
 			for task := range ch {
 				if task() != nil {
-						atomic.AddInt32(&errors, 1)
+					atomic.AddInt32(&errors, 1)
 				}
 			}
 			wg.Done()
@@ -48,8 +48,8 @@ func Run(tasks []Task, n, m int) error {
 	for _, task := range tasks {
 		if atomic.LoadInt32(&errors) >= int32(m) {
 			return ErrErrorsLimitExceeded
-		} 
-		ch <- task	
+		}
+		ch <- task
 	}
 	return nil
 }
