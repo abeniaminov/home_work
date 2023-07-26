@@ -22,15 +22,14 @@ func Run(tasks []Task, n, m int) error {
 		return ErrWorkersCountLessThen1
 	}
 
-	worker := func(ch chan Task, done <-chan struct{}) {
+	worker := func(ch <-chan Task, done <-chan struct{}) {
 		go func() {
 			for {
 				select {
 				case <-done:
 					return
 				case task := <-ch:
-					errT := task()
-					if errT != nil {
+					if task() != nil {
 						atomic.AddInt32(&errors, 1)
 					}
 					wg.Done()
