@@ -22,43 +22,34 @@ func Run(tasks []Task, n, m int) error {
 		return ErrWorkersCountLessThen1
 	}
 
-	worker := func(ch <-chan Task, done <-chan struct{}) {
+	worker := func(ch <-chan Task) {
+		wg.Add(1)
 		go func() {
-			for {
-				select {
-				case <-done:
-					return
-				case task := <-ch:
-					if task() != nil {
+			for task := range ch {
+				if task() != nil {
 						atomic.AddInt32(&errors, 1)
-					}
-					wg.Done()
 				}
 			}
+			wg.Done()
 		}()
 	}
 
-	done := make(chan struct{})
 	ch := make(chan Task)
 
 	defer func() {
+		close(ch)
 		wg.Wait()
-		for i := 0; i < n; i++ {
-			done <- struct{}{}
-		}
 	}()
 
 	for i := 0; i < n; i++ {
-		worker(ch, done)
+		worker(ch)
 	}
 
 	for _, task := range tasks {
-		if atomic.LoadInt32(&errors) < int32(m) {
-			wg.Add(1)
-			ch <- task
-		} else {
+		if atomic.LoadInt32(&errors) >= int32(m) {
 			return ErrErrorsLimitExceeded
-		}
+		} 
+		ch <- task	
 	}
 	return nil
 }
