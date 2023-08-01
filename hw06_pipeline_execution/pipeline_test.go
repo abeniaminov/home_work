@@ -61,6 +61,34 @@ func TestPipeline(t *testing.T) {
 			int64(sleepPerStage)*int64(len(stages)+len(data)-1)+int64(fault))
 	})
 
+	t.Run("simple case 20 values", func(t *testing.T) {
+		const count = 20
+		in := make(Bi)
+		data := make([]int, count)
+		for i := 0; i < count; i++ {
+			data[i] = i
+		}
+
+		go func() {
+			for _, v := range data {
+				in <- v
+			}
+			close(in)
+		}()
+
+		result := make([]string, 0, 10)
+		start := time.Now()
+		for s := range ExecutePipeline(in, nil, stages...) {
+			result = append(result, s.(string))
+		}
+		elapsed := time.Since(start)
+		require.Equal(t, count, len(result))
+		require.Less(t,
+			int64(elapsed),
+			// ~2,4s for processing 20 values in 4 stages (100ms every) concurrently
+			int64(sleepPerStage)*int64(len(stages)+len(data)-1)+int64(fault))
+	})
+
 	t.Run("done case", func(t *testing.T) {
 		in := make(Bi)
 		done := make(Bi)
@@ -69,7 +97,7 @@ func TestPipeline(t *testing.T) {
 		// Abort after 200ms
 		abortDur := sleepPerStage * 2
 		go func() {
-			<-time.After(abortDur)
+			<-time.After(abortDur - fault/2)
 			close(done)
 		}()
 
@@ -89,5 +117,34 @@ func TestPipeline(t *testing.T) {
 
 		require.Len(t, result, 0)
 		require.Less(t, int64(elapsed), int64(abortDur)+int64(fault))
+	})
+
+	t.Run("done case after 0", func(t *testing.T) {
+		in := make(Bi)
+		done := make(Bi)
+		data := []int{1, 2, 3, 4, 5}
+
+		// Abort after 0ms
+		go func() {
+			<-time.After(0)
+			close(done)
+		}()
+
+		go func() {
+			for _, v := range data {
+				in <- v
+			}
+			close(in)
+		}()
+
+		result := make([]string, 0, 10)
+		start := time.Now()
+		for s := range ExecutePipeline(in, done, stages...) {
+			result = append(result, s.(string))
+		}
+		elapsed := time.Since(start)
+
+		require.Len(t, result, 0)
+		require.Less(t, int64(elapsed), int64(sleepPerStage)+int64(fault))
 	})
 }
