@@ -8,7 +8,7 @@ type (
 
 type Stage func(in In) (out Out)
 
-func checkDown(chIn In, done In) Out {
+func checkDone(chIn In, done In) Out {
 	ch := make(Bi)
 
 	go func() {
@@ -28,7 +28,7 @@ func checkDown(chIn In, done In) Out {
 
 func ExecutePipeline(in In, done In, stages ...Stage) Out {
 	for _, stage := range stages {
-		in = stage(checkDown(in, done))
+		in = stage(checkDone(in, done))
 	}
 	return in
 }
