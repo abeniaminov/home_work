@@ -45,4 +45,13 @@ func TestCopy(t *testing.T) {
 		require.Equal(t, 2, int(destFileSize), "wrong dest file size")
 		os.Remove(toFileStat.Name())
 	})
+	t.Run("limit is larger than file size", func(t *testing.T) {
+		fromFileStat, _ := os.Stat("testdata/input.txt")
+		sourceFileSize := fromFileStat.Size()
+		Copy("testdata/input.txt", "/tmp/mm.txt", 0, sourceFileSize+10)
+		toFileStat, _ := os.Stat("/tmp/mm.txt")
+		destFileSize := toFileStat.Size()
+		require.Equal(t, int(sourceFileSize), int(destFileSize), "wrong dest file size")
+		os.Remove(toFileStat.Name())
+	})
 }
