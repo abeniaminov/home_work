@@ -16,20 +16,20 @@ var (
 )
 
 type ProgressBar struct {
-	Total int
-	Max   int
+	Total int64
+	Max   int64
 }
 
 func (pb *ProgressBar) Write(p []byte) (int, error) {
 	n := len(p)
-	pb.Total += n
+	pb.Total += int64(n)
 	pb.PrintProgress()
 	return n, nil
 }
 
 func (pb ProgressBar) PrintProgress() {
 	persent := pb.Total / pb.Max * 100
-	fmt.Printf("\r%s  %d%%", strings.Repeat("#", persent), persent)
+	fmt.Printf("\r%s  %d%%", strings.Repeat("#", int(persent)), persent)
 	fmt.Printf("\rCopied... %d bytes ", pb.Total)
 }
 
@@ -79,7 +79,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	defer dest.Close()
 
 	realLimit := min(limit, sourceFileSize-offset)
-	pb := &ProgressBar{Max: int(realLimit)}
+	pb := &ProgressBar{Max: realLimit}
 
 	source.Seek(offset, 0)
 	if _, err := io.CopyN(dest, io.TeeReader(source, pb), realLimit); err != nil {
