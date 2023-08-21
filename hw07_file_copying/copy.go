@@ -99,9 +99,6 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 		return err
 	}
 
-	if _, err := io.CopyN(dest, io.TeeReader(source, pb), realLimit); err != nil {
-		return err
-	}
-
-	return nil
+	_, err = io.CopyN(dest, io.TeeReader(source, pb), realLimit)
+	return err
 }
