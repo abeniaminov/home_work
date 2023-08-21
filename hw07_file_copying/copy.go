@@ -9,10 +9,11 @@ import (
 )
 
 var (
-	ErrUnsupportedFile       = errors.New("unsupported file")
-	ErrOffsetExceedsFileSize = errors.New("offset exceeds file size")
-	ErrOffsetIsNegativ       = errors.New("offset is negative")
-	ErrLimitIsNegativ        = errors.New("limit is negative")
+	ErrUnsupportedFile               = errors.New("unsupported file")
+	ErrOffsetExceedsFileSize         = errors.New("offset exceeds file size")
+	ErrOffsetIsNegativ               = errors.New("offset is negative")
+	ErrLimitIsNegativ                = errors.New("limit is negative")
+	ErrSourceAndDesinationAreTheSame = errors.New("source and destination are the same")
 )
 
 type ProgressBar struct {
@@ -28,8 +29,13 @@ func (pb *ProgressBar) Write(p []byte) (int, error) {
 }
 
 func (pb ProgressBar) PrintProgress() {
-	persent := pb.Total / pb.Max * 100
-	fmt.Printf("\r%s  %d%%", strings.Repeat("#", int(persent)), persent)
+	var percent int64
+	if pb.Max == 0 {
+		percent = 100
+	} else {
+		percent = pb.Total / pb.Max * 100
+	}
+	fmt.Printf("\r%s  %d%%", strings.Repeat("#", int(percent)), percent)
 	fmt.Printf("\rCopied... %d bytes ", pb.Total)
 }
 
@@ -51,6 +57,13 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	fromFileStat, err := os.Stat(fromPath)
 	if err != nil {
 		return err
+	}
+
+	toFileStat, err := os.Stat(toPath)
+	if err == nil {
+		if os.SameFile(fromFileStat, toFileStat) {
+			return ErrSourceAndDesinationAreTheSame
+		}
 	}
 
 	if !fromFileStat.Mode().IsRegular() {
@@ -81,7 +94,11 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	realLimit := min(limit, sourceFileSize-offset)
 	pb := &ProgressBar{Max: realLimit}
 
-	source.Seek(offset, 0)
+	_, err = source.Seek(offset, io.SeekStart)
+	if err != nil {
+		return err
+	}
+
 	if _, err := io.CopyN(dest, io.TeeReader(source, pb), realLimit); err != nil {
 		return err
 	}
