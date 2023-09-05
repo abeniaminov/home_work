@@ -9,73 +9,79 @@ import (
 )
 
 func TestRunCmd(t *testing.T) {
-	t.Run("fail exec multiline test", func(t *testing.T) {
-		content := []byte("foo\nbar\nerl")
-		command := []string{"ls", "-a"}
-		v := prepareExecutor(command, content)
-		expected := 0
-		require.Equal(t, expected, v)
-		env, ok := os.LookupEnv("FOO")
-		require.Equal(t, ok, true)
-		require.Equal(t, env, "foo")
-	})
-	t.Run("fail exec multiline param test", func(t *testing.T) {
-		content := []byte("-l\nbar\nerl")
-		command := []string{"ls", "${FOO}"}
-		v := prepareExecutor(command, content)
-		expected := 0
-		require.Equal(t, expected, v)
-		env, ok := os.LookupEnv("FOO")
-		require.Equal(t, ok, true)
-		require.Equal(t, env, "-l")
-	})
-	t.Run("fail exec 0x00 test", func(t *testing.T) {
-		content := []byte("foo" + string([]byte{0x00}) + "erl")
-		command := []string{"ls", "-l"}
-		v := prepareExecutor(command, content)
-		expected := 0
-		require.Equal(t, expected, v)
-		env, ok := os.LookupEnv("FOO")
-		require.Equal(t, ok, true)
-		require.Equal(t, env, "foo\nerl")
-	})
-	t.Run("fail exec tabs test", func(t *testing.T) {
-		content := []byte("foo\terl\t\t")
-		command := []string{"ls", "-l"}
-		v := prepareExecutor(command, content)
-		expected := 0
-		require.Equal(t, expected, v)
-		env, ok := os.LookupEnv("FOO")
-		require.Equal(t, ok, true)
-		require.Equal(t, env, "foo\terl")
-	})
-	t.Run("fail exec spaces test", func(t *testing.T) {
-		content := []byte("foo erl  ")
-		command := []string{"ls", "-l"}
-		v := prepareExecutor(command, content)
-		expected := 0
-		require.Equal(t, expected, v)
-		env, ok := os.LookupEnv("FOO")
-		require.Equal(t, ok, true)
-		require.Equal(t, env, "foo erl")
-	})
-	t.Run("fail exec combination test", func(t *testing.T) {
-		content := []byte("foo erl \t" + string([]byte{0x00}) + "boo  \t\t")
-		command := []string{"ls", "-l"}
-		v := prepareExecutor(command, content)
-		expected := 0
-		require.Equal(t, expected, v)
-		env, ok := os.LookupEnv("FOO")
-		require.Equal(t, ok, true)
-		require.Equal(t, env, "foo erl \t\nboo")
-	})
+	tests := []struct {
+		name     string
+		command  []string
+		content  []byte
+		exitCode int
+		expected string
+	}{
+		{
+			name:     "fail exec multiline test",
+			command:  []string{"ls", "-a"},
+			content:  []byte("foo\nbar\nerl"),
+			exitCode: 0,
+			expected: "foo",
+		},
+		{
+			name:     "fail exec multiline param test",
+			command:  []string{"ls", "${FOO}"},
+			content:  []byte("-l\nbar\nerl"),
+			exitCode: 0,
+			expected: "-l",
+		},
+		{
+			name:     "fail exec 0x00 test",
+			command:  []string{"ls", "-a"},
+			content:  []byte("foo" + string([]byte{0x00}) + "erl"),
+			exitCode: 0,
+			expected: "foo\nerl",
+		},
+		{
+			name:     "fail exec tabs test",
+			command:  []string{"ls", "-a"},
+			content:  []byte("foo\terl\t\t"),
+			exitCode: 0,
+			expected: "foo\terl",
+		},
+		{
+			name:     "fail exec spaces test",
+			command:  []string{"ls", "-a"},
+			content:  []byte("foo erl  "),
+			exitCode: 0,
+			expected: "foo erl",
+		},
+		{
+			name:     "fail exec combination test",
+			command:  []string{"ls", "-a"},
+			content:  []byte("foo erl \t" + string([]byte{0x00}) + "boo  \t\t"),
+			exitCode: 0,
+			expected: "foo erl \t\nboo",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			v := prepareExecutor(test.command, test.content)
+			require.Equal(t, test.exitCode, v)
+			env, ok := os.LookupEnv("FOO")
+			require.True(t, ok)
+			require.Equal(t, env, test.expected)
+		})
+	}
 	t.Run("fail exec need remove test", func(t *testing.T) {
 		command := []string{"ls", "-l"}
 		v := prepareExecutor(command, nil)
-		expected := 0
-		require.Equal(t, expected, v)
+		exitCode := 0
+		require.Equal(t, exitCode, v)
 		_, ok := os.LookupEnv("FOO")
-		require.Equal(t, ok, false)
+		require.False(t, ok)
+	})
+	t.Run("fail exec test", func(t *testing.T) {
+		command := []string{"ls", "mura"}
+		v := prepareExecutor(command, nil)
+		exitCode := 1
+		require.Equal(t, exitCode, v)
 	})
 }
 

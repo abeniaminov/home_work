@@ -8,6 +8,42 @@ import (
 )
 
 func TestReadDir(t *testing.T) {
+	tests := []struct {
+		name     string
+		content  []byte
+		expected *EnvValue
+	}{
+		{
+			name:     "fail multiline test",
+			content:  []byte("foo\nbar\nerl"),
+			expected: &EnvValue{Value: "foo", NeedRemove: false},
+		},
+		{
+			name:     "fail 0x00 test",
+			content:  []byte("foo" + string([]byte{0x00}) + "erl"),
+			expected: &EnvValue{Value: "foo\nerl", NeedRemove: false},
+		},
+		{
+			name:     "fail tabs test",
+			content:  []byte("foo\terl\t\t"),
+			expected: &EnvValue{Value: "foo\terl", NeedRemove: false},
+		},
+		{
+			name:     "fail spaces test",
+			content:  []byte("foo erl  "),
+			expected: &EnvValue{Value: "foo erl", NeedRemove: false},
+		},
+		{
+			name:     "fail combination test",
+			content:  []byte("foo erl \t" + string([]byte{0x00}) + "boo  \t\t"),
+			expected: &EnvValue{Value: "foo erl \t\nboo", NeedRemove: false},
+		},
+		{
+			name:     "fail need remove test",
+			content:  nil,
+			expected: &EnvValue{Value: "", NeedRemove: true},
+		},
+	}
 	t.Run("path not exists", func(t *testing.T) {
 		_, err := ReadDir("./testdata/noexists")
 		require.ErrorIs(t, err, ErrIsNotExist, "actual err - %v", err)
@@ -16,59 +52,13 @@ func TestReadDir(t *testing.T) {
 		_, err := ReadDir("./testdata/env/BAR")
 		require.ErrorIs(t, err, ErrIsNotDir, "actual err - %v", err)
 	})
-	t.Run("fail multiline test", func(t *testing.T) {
-		content := []byte("foo\nbar\nerl")
-		v, err := prepareReadEnv(content)
-		if err != nil {
-			t.Fatal(err)
-		}
-		expected := &EnvValue{Value: "foo", NeedRemove: false}
-		require.Equal(t, expected, v)
-	})
-	t.Run("fail 0x00 test", func(t *testing.T) {
-		content := []byte("foo" + string([]byte{0x00}) + "erl")
-		v, err := prepareReadEnv(content)
-		if err != nil {
-			t.Fatal(err)
-		}
-		expected := &EnvValue{Value: "foo\nerl", NeedRemove: false}
-		require.Equal(t, expected, v)
-	})
-	t.Run("fail tabs test", func(t *testing.T) {
-		content := []byte("foo\terl\t\t")
-		v, err := prepareReadEnv(content)
-		if err != nil {
-			t.Fatal(err)
-		}
-		expected := &EnvValue{Value: "foo\terl", NeedRemove: false}
-		require.Equal(t, expected, v)
-	})
-	t.Run("fail spaces test", func(t *testing.T) {
-		content := []byte("foo erl  ")
-		v, err := prepareReadEnv(content)
-		if err != nil {
-			t.Fatal(err)
-		}
-		expected := &EnvValue{Value: "foo erl", NeedRemove: false}
-		require.Equal(t, expected, v)
-	})
-	t.Run("fail combination test", func(t *testing.T) {
-		content := []byte("foo erl \t" + string([]byte{0x00}) + "boo  \t\t")
-		v, err := prepareReadEnv(content)
-		if err != nil {
-			t.Fatal(err)
-		}
-		expected := &EnvValue{Value: "foo erl \t\nboo", NeedRemove: false}
-		require.Equal(t, expected, v)
-	})
-	t.Run("fail need remove test", func(t *testing.T) {
-		v, err := prepareReadEnv(nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		expected := &EnvValue{Value: "", NeedRemove: true}
-		require.Equal(t, expected, v)
-	})
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			v, err := prepareReadEnv(test.content)
+			require.NoError(t, err, "actual err - %v", err)
+			require.Equal(t, test.expected, v)
+		})
+	}
 }
 
 func prepareReadEnv(fileContent []byte) (*EnvValue, error) {

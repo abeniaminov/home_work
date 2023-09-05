@@ -59,7 +59,7 @@ func ReadDir(dir string) (Environment, error) {
 			return nil, err
 		}
 
-		if fpStat.Mode().IsRegular() {
+		if fpStat.Mode().IsRegular() && !strings.Contains(file.Name(), "=") {
 			env, err := readEnvValue(fpath)
 			if err != nil {
 				return nil, err
