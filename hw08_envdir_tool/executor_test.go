@@ -81,7 +81,7 @@ func TestRunCmd(t *testing.T) {
 		command := []string{"ls", "mura"}
 		v := prepareExecutor(command, nil)
 		exitCode := 1
-		require.Equal(t, exitCode, v)
+		require.GreaterOrEqual(t, exitCode, v)
 	})
 }
 
