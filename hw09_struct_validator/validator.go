@@ -37,7 +37,7 @@ type ValidationErrors []ValidationError
 func (vErrs *ValidationErrors) Error() string {
 	var b strings.Builder
 	for _, vErr := range *vErrs {
-		b.WriteString(fmt.Sprintf("Field: %s, Error: %v", vErr.Field, vErr.Err))
+		b.WriteString(vErr.Error())
 	}
 	return b.String()
 }
@@ -61,20 +61,19 @@ func (v *ValidationError) Unwrap() error {
 func Validate(v interface{}) error {
 	var validationErrors ValidationErrors
 
-	valuesData, err1 := getValidationData(v)
-	if err1 != nil {
-		return err1
+	valuesData, err := getValidationData(v)
+	if err != nil {
+		return err
 	}
 
 	for _, val := range *valuesData {
 		err := validateField(val.Field, val.Tag, val.Value)
 		if err != nil {
 			var e *ValidationErrors
-			if errors.As(err, &e) {
-				validationErrors = append(validationErrors, *e...)
-			} else {
+			if !errors.As(err, &e) {
 				return err
 			}
+			validationErrors = append(validationErrors, *e...)
 		}
 	}
 
@@ -108,12 +107,12 @@ func getValidationData(v interface{}) (*[]ValidationData, error) {
 		if tag == "" {
 			continue
 		}
-		switch fv.Type().Kind().String() {
-		case "int":
+		switch fv.Type().Kind() {
+		case reflect.Int:
 			valuesData = append(valuesData, ValidationData{field.Name, tag, int(fv.Int())})
-		case "string":
+		case reflect.String:
 			valuesData = append(valuesData, ValidationData{field.Name, tag, fv.String()})
-		case "slice":
+		case reflect.Slice:
 			if fv.Type().String() == "[]string" {
 				strSlice := fv.Interface().([]string)
 				for i := 0; i < len(strSlice); i++ {
@@ -126,7 +125,7 @@ func getValidationData(v interface{}) (*[]ValidationData, error) {
 					valuesData = append(valuesData, ValidationData{field.Name, tag, intSlice[i]})
 				}
 			}
-		case "struct", "ptr":
+		case reflect.Struct, reflect.Ptr:
 			if tag != "dive" {
 				continue
 			}
@@ -135,7 +134,9 @@ func getValidationData(v interface{}) (*[]ValidationData, error) {
 				return nil, err
 			}
 			valuesData = append(valuesData, *data...)
-		}
+		default:
+			continue
+		} //exhaustive:ignore
 	}
 	return &valuesData, nil
 }

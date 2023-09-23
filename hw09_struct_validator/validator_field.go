@@ -70,35 +70,18 @@ func checkIn(field string, v interface{}, inc string) error {
 			Err:   fmt.Errorf("%w - actual type %s, expected type string", ErrUnsupportableType, rv.Kind().String()),
 		}
 	}
-
-	if rv.Kind() == reflect.String {
-		s := strings.Split(inc, ",")
-		dict := make(map[string]struct{}, len(s))
-		for _, val := range s {
-			dict[val] = struct{}{}
-		}
-		if _, ok := dict[rv.String()]; !ok {
-			return &ValidationError{
-				Field: field,
-				Err:   fmt.Errorf("%w - value=%s, enum=%s", ErrInclude, rv.String(), inc),
-			}
-		}
-	}
+	var val string
 	if rv.Kind() == reflect.Int {
-		s := strings.Split(inc, ",")
-		dict := make(map[int]struct{}, len(s))
-		for _, val := range s {
-			i, err := strconv.Atoi(val)
-			if err != nil {
-				return fmt.Errorf("%w - value=`%s`", ErrConvertionStrToInt, val)
-			}
-			dict[i] = struct{}{}
-		}
-		if _, ok := dict[int(rv.Int())]; !ok {
-			return &ValidationError{
-				Field: field,
-				Err:   fmt.Errorf("%w - value=%d, enum=%s", ErrInclude, rv.Int(), inc),
-			}
+		val = strconv.Itoa(int(rv.Int()))
+	} else {
+		val = rv.String()
+	}
+
+	s := strings.Split(inc, tagValueSeparator)
+	if !contain[string](s, val) {
+		return &ValidationError{
+			Field: field,
+			Err:   fmt.Errorf("%w - value=%s, enum=%s", ErrInclude, val, inc),
 		}
 	}
 	return nil
@@ -178,4 +161,13 @@ func validateField(field, tag string, v interface{}) error {
 		}
 	}
 	return &vErr
+}
+
+func contain[T comparable](slice []T, e T) bool {
+	for _, v := range slice {
+		if e == v {
+			return true
+		}
+	}
+	return false
 }
