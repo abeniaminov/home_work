@@ -8,7 +8,27 @@ type (
 
 type Stage func(in In) (out Out)
 
+func checkDone(chIn In, done In) Out {
+	ch := make(Bi)
+
+	go func() {
+		defer close(ch)
+		for v := range chIn {
+			select {
+			case <-done:
+				return
+			default:
+				ch <- v
+			}
+		}
+	}()
+
+	return ch
+}
+
 func ExecutePipeline(in In, done In, stages ...Stage) Out {
-	// Place your code here.
-	return nil
+	for _, stage := range stages {
+		in = stage(checkDone(in, done))
+	}
+	return in
 }
