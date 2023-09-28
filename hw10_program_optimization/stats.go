@@ -8,18 +8,6 @@ import (
 	"strings"
 )
 
-type User struct {
-	ID       int
-	Name     string
-	Username string
-	Email    string
-	Phone    string
-	Password string
-	Address  string
-}
-
-type DomainStat map[string]int
-
 func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 	u, err := getUsers(r)
 	if err != nil {
@@ -28,7 +16,6 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 	return countDomains(u, domain)
 }
 
-type users [100_000]User
 
 func getUsers(r io.Reader) (result users, err error) {
 	content, err := io.ReadAll(r)
