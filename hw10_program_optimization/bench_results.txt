@@ -1,0 +1,7 @@
+goos: darwin
+goarch: amd64
+pkg: github.com/abeniaminov/home_work/hw10_program_optimization
+cpu: Intel(R) Core(TM) i5-10500 CPU @ 3.10GHz
+BenchmarkStat-12                       1         522 ms/op        323 MB/op    3145397 allocs/op
+BenchmarkStatFast-12                   1         145 ms/op         39 MB/op     323940 allocs/op
+BenchmarkStatFastFrugal-12             1         117 ms/op          3 MB/op     123198 allocs/op
