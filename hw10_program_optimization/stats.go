@@ -16,7 +16,6 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 	return countDomains(u, domain)
 }
 
-
 func getUsers(r io.Reader) (result users, err error) {
 	content, err := io.ReadAll(r)
 	if err != nil {

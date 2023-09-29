@@ -2,37 +2,31 @@ package hw10programoptimization
 
 import (
 	"bufio"
-	"encoding/json"
 	"io"
-	"regexp"
 	"runtime"
 	"strings"
 	"sync"
+
+	"github.com/valyala/fastjson"
 )
 
-
-
-func GetDomainStatFast(r io.Reader, domain string) (DomainStat, error) {
+func GetDomainStatFastButGreedy(r io.Reader, domain string) (DomainStat, error) {
 	scanner := bufio.NewScanner(r)
 	cpuCount := runtime.NumCPU()
+	runtime.GOMAXPROCS(cpuCount)
 	stat := make(DomainStat)
-		
-	reg, err := regexp.Compile("\\."+domain)
-	if err != nil {
-		return stat, err
-	}
 
-    var wg = new(sync.WaitGroup)
-	var wg1 = new(sync.WaitGroup)
+	wg := new(sync.WaitGroup)
+	wg1 := new(sync.WaitGroup)
 
-	var lock = sync.RWMutex{}
+	lock := sync.Mutex{}
 
 	jobs := make(chan string, cpuCount)
 	results := make(chan string, cpuCount)
 
 	for i := 0; i < cpuCount; i++ {
 		wg.Add(1)
-		go worker(wg, wg1, jobs, results, reg)
+		go worker(wg, wg1, jobs, results, domain)
 	}
 
 	go func() {
@@ -42,12 +36,12 @@ func GetDomainStatFast(r io.Reader, domain string) (DomainStat, error) {
 		close(jobs)
 	}()
 
-    go func() {
+	go func() {
 		for result := range results {
 			lock.Lock()
 			stat[result]++
 			lock.Unlock()
-			wg1.Done() 
+			wg1.Done()
 		}
 	}()
 
@@ -55,34 +49,31 @@ func GetDomainStatFast(r io.Reader, domain string) (DomainStat, error) {
 	close(results)
 	wg1.Wait()
 
-	return stat, nil	
+	return stat, nil
 }
 
-func worker(wg, wg1 *sync.WaitGroup, jobs <-chan string, results chan<- string, reg *regexp.Regexp) {
-    for line := range jobs {
-		s, err := job(line, reg)
+func worker(wg, wg1 *sync.WaitGroup, jobs <-chan string, results chan<- string, domain string) {
+	for line := range jobs {
+		s, err := job(line, domain)
 		if err != nil {
 			continue
 		}
 		wg1.Add(1)
-        results <- s
-
-    }
-   wg.Done()
+		results <- s
+	}
+	wg.Done()
 }
 
-func job(line string, reg *regexp.Regexp) (string, error) {
-	var user User
-	if err := json.Unmarshal([]byte(line), &user); err != nil {
-		return "", err
+func job(line, domain string) (string, error) {
+	email := fastjson.GetString([]byte(line), "Email")
+
+	if !strings.Contains(email, "@") {
+		return "", ErrInvalidEmail
 	}
-	
-    if reg.Match([]byte(user.Email)) {
-		return strings.ToLower(strings.SplitN(user.Email, "@", 2)[1]), nil
+
+	if strings.HasSuffix(email, "."+domain) {
+		return strings.ToLower(strings.SplitN(email, "@", 2)[1]), nil
 	}
-	
-	return "", ErrDomainNotFound 	
+
+	return "", ErrDomainNotFound
 }
-
-	
-
