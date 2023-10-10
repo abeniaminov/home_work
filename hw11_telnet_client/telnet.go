@@ -46,4 +46,3 @@ func (c *client) Receive() error {
 func (c *client) Close() error {
 	return c.con.Close()
 }
-// P.S. Author's solution takes no more than 50 lines.
